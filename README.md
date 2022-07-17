@@ -1,4 +1,4 @@
-# Chaos Theory and Complexity Sciences Research Project's Software Tools and Resources
+# Chaos Theory and Complexity Sciences Research Project's Software Tools and Resources Repository
 
 
 The Chaos Theory and Complexity Sciences Research and Educational Project is an international research project based on classroom materials for the Mathematics II lectures taught by Carlos Pedro Gonçalves (https://orcid.org/0000-0002-0298-3974) at the Bachelor in Aeronautical Management (https://www.ulusofona.pt/en/undergraduate/aeronautical-management) at Lusophone University of Humanities and Technologies’ School of Economic Sciences and Organizations.
