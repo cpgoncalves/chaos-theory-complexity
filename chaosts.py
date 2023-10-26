@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 
-Carlos Pedro Goncalves, October, 2023
-Lusophone University
+
+@author: Carlos Pedro Gonçalves
+@title: Associate Professor
+@institution: Lusophone University
+@department:Department of Management on Civil Aviation and Airports.
+@school: School of Economic Sciences and Organizations 
 
 Chaos time series analyzer with incorporated smart topological data analysis
 methods including embedding dimension selection based on best performance
