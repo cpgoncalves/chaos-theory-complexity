@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
-
 @author: Carlos Pedro Gonçalves
 @title: Associate Professor
 @institution: Lusophone University
