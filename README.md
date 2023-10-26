@@ -6,8 +6,10 @@ The Chaos Theory and Complexity Sciences Research and Educational Project is an 
 To find out more visit the project's Homepage: https://sites.google.com/view/chaos-complexity
 
 # Software tools as of 2023:
-Coupled Circle Map.py - Simulator of coupled circle map.
-chaosts.py - Chaotic time series analyzer and predictor with machine learning and topological data analysis methods.
+
+- Coupled Circle Map.py - Simulator of coupled circle map.
+
+- chaosts.py - Chaotic time series analyzer and predictor with machine learning and topological data analysis methods.
 
 ![image](https://user-images.githubusercontent.com/15832110/179417088-79253f6b-1f65-43b6-94af-6439af466359.png)
 
