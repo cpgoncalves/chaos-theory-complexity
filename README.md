@@ -13,4 +13,6 @@ To find out more visit the project's Homepage: https://sites.google.com/view/cha
 - chaosts.py - Chaotic time series analyzer and predictor with machine learning and topological data analysis methods.
 
 ![image](https://user-images.githubusercontent.com/15832110/179417088-79253f6b-1f65-43b6-94af-6439af466359.png)
+![image](https://github.com/cpgoncalves/chaos-theory-complexity/assets/15832110/4b54d6f9-81bf-4d32-9349-d3b84de37dce)
+
 
