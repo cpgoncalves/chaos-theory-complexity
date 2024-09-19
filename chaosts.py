@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-@author: Carlos Pedro Gonçalves
-@title: Associate Professor
-@institution: Lusophone University
-@department:Department of Management on Civil Aviation and Airports.
-@school: School of Economic Sciences and Organizations 
+
+Carlos Pedro Goncalves, September, 2024
+Lusophone University
 
 Chaos time series analyzer with incorporated smart topological data analysis
 methods including embedding dimension selection based on best performance
@@ -19,30 +17,12 @@ https://www.ulusofona.pt/en/lisboa/bachelor/aeronautical-management
 The software is part of the international R&D project: 
 https://sites.google.com/view/chaos-complexity/
 
-This work is licensed under the BSD 2-Clause License:
+Version 1:
+Copyright (c) October 2023 Carlos Pedro Gonçalves
+Version 2 (present version):
+Copyright (c) September 2024 Carlos Pedro Gonçalves
 
-Copyright (c) 2023, Carlos Pedro Gonçalves
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+This work is licensed under the BSD 3-Clause License
 
 @author: cpdsg
 """
@@ -57,16 +37,39 @@ from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import explained_variance_score as e_variance
 from sklearn.metrics import r2_score
 from sklearn.neighbors import kneighbors_graph
+from sklearn.feature_selection import mutual_info_regression
 import networkx as nx
+from scipy.signal import detrend
+from statsmodels.tsa.tsatools import detrend as poly_detrend
+import nolds # requires installation of nolds
 
 # =============================================================================
 # Signal Analysis Methods
 # =============================================================================
 
+
+# Detrending a series using either linear of polynomial
+def ts_detrend(signal,order):
+    if order == 1:
+        detrended_signal = detrend(signal)
+    else:
+        detrended_signal = poly_detrend(signal,order)
+    
+    trend = signal - detrended_signal
+    
+    print("\nDetrending Results:")
+    print("R2:", r2_score(signal, trend))
+    
+    
+    return detrended_signal, trend
+
+
+
 # Spectral analysis function with option for fitting the slope and 
 # extracting the Hurst exponent in the case of a power law spectrum
 # used for Self-Organized Criticality markers' identification (SOC)
-def pspectrum(series,time_step = 1,low_cut=None,high_cut=None,fit_slope=False):
+def pspectrum(series,title,time_step = 1,
+              low_cut=None,high_cut=None,fit_slope=False):
     
     # perform the spectrum analysis
     ps = np.abs(np.fft.fft(series))**2
@@ -75,6 +78,7 @@ def pspectrum(series,time_step = 1,low_cut=None,high_cut=None,fit_slope=False):
     
     # plot the power spectrum in a log-log scale
     fig, ax = plt.subplots(1)
+    plt.title(title)
     ax.loglog(freqs[idx],ps[idx],c='k',lw=0.60)
     ax.set_xlabel('Frequency')
     ax.set_ylabel('Power')
@@ -158,6 +162,12 @@ def plot_hist(log_c,log_f,fit_data=False,start=None,stop=None):
     plt.show()
     
 
+# Perform R/S Analysis
+def rs_analysis(data):
+    H = nolds.hurst_rs(data, debug_plot=True)
+    print("\nHurst (R/S) Analysis:", H)
+    print("Beta (R/S) Analysis:", 2*H+1)
+
 
 # =============================================================================
 # Delay Embedding Methods
@@ -206,8 +216,42 @@ def lag_select(series,max_lag,pacf=True,plot=True):
     
     # return the lag for delay embedding
     return lag
+
+
+# First minimum mutual information lag selection
+def mi_lag(series, max_lag):
     
     
+    # search for the first minimum of the mutual information
+    lag = -1
+    
+    
+    for i in range(2,max_lag):
+       
+        mi_1 = np.float(mutual_info_regression(series[:-(i-1)].reshape(-1,1), series[i-1:],
+                                      discrete_features=[False]))
+        mi_2 = np.float(mutual_info_regression(series[:-i].reshape(-1,1), series[i:],
+                                      discrete_features=[False]))
+        mi_3 = np.float(mutual_info_regression(series[:-(i+1)].reshape(-1,1), series[i+1:],
+                                      discrete_features=[False]))
+        
+                
+        if mi_2 < mi_1 and mi_2 < mi_3:
+            
+             lag = i
+             break
+        
+        
+    if lag == -1:
+        print("\nNo lag was found")
+    else:
+        print("\nLag:", i)
+    
+    return i
+    
+
+
+
 
 # Shift series function used for delay embedding
 def shift_series(df, # Pandas dataframe
@@ -342,14 +386,14 @@ def recurrence_matrix(series, # series of values
 def recurrence_analysis(S, # distance matrix
                         radius, # radius to test
                         printout_lines=False, # printout lines with 100% recurrence
-                        printout_results=False, # return the diagonals with 100% recurrence
-                        return_stats=True # return stats
+                        printout_results=True, # return the diagonals with 100% recurrence
+                        return_stats=False # return stats
                         ):
        
     # get the recurrence matrix for the given radius
     B = S <= radius
     B = 1*B
-    print(B)
+    
     
     
     # initialize the number of diagonals
@@ -439,15 +483,15 @@ def recurrence_analysis(S, # distance matrix
     
 
 # KNN graph analysis
-def knn_analysis(E, k, node_size=10, loglog=True):
+def knn_analysis(E, k, title, node_size=10, loglog=True, return_graph=False):
     
     # calculate the graph and plot it
-    knn = kneighbors_graph(E,k_neighbors=k)
+    knn = kneighbors_graph(E,n_neighbors=k)
     knn = np.matrix(knn.toarray())
     
     G=nx.from_numpy_matrix(knn)
     
-    plt.title('KNN Graph')
+    plt.title('KNN Graph '+title)
     pos = nx.spring_layout(G, seed=1039799)
     nx.draw_networkx_nodes(G, pos, node_size=node_size)
     nx.draw_networkx_edges(G, pos, alpha=0.4)
@@ -462,15 +506,16 @@ def knn_analysis(E, k, node_size=10, loglog=True):
     print("\nMaximum number of edges:", max_edges)
     print("\nProportion Completeness:", num_edges/max_edges)
     
+    
     # plot the connected components of the graph
     degree_sequence = sorted((d for n, d in G.degree()), reverse=True)
     fig = plt.figure("Degree for Adjacency Matrix", figsize=(8, 8))
     ax1 = fig.add_subplot()
     Gcc = G.subgraph(sorted(nx.connected_components(G), key=len, reverse=True)[0])
     pos = nx.spring_layout(Gcc, seed=10396953)
-    nx.draw_networkx_nodes(Gcc, pos, ax=ax1, node_size=20)
+    nx.draw_networkx_nodes(Gcc, pos, ax=ax1, node_size=node_size)
     nx.draw_networkx_edges(Gcc, pos, ax=ax1, alpha=0.4)
-    ax1.set_title("Connected components of G")
+    ax1.set_title("Connected components of G "+title)
     ax1.set_axis_off()
     plt.show()
     
@@ -490,7 +535,11 @@ def knn_analysis(E, k, node_size=10, loglog=True):
     
     
     # estimate the Kolmogorov-Sinai entropy of the graph
-    L = np.max(np.linalg.eigvals(knn))
+    Adjacency = nx.to_numpy_array(G,weight=None)
+    
+    L = np.max(np.linalg.eigvals(Adjacency))
+    
+    #L = np.max(np.linalg.eigvals(knn))
     
     print("\nKolmogorov-Sinai Entropy:", np.log(L)/np.log(2))
     
@@ -503,17 +552,17 @@ def knn_analysis(E, k, node_size=10, loglog=True):
         values, counts = np.unique(degree_sequence, return_counts=True)
         plt.plot(values,counts, marker='.')
     
-    plt.title("Degree Distribution")
+    plt.title("Degree Distribution "+title)
     plt.xlabel("Degree")
     plt.ylabel("Number of Nodes")
     plt.show()
-
-
-
+    
+    if return_graph == True:
+        return G
 
 
 # Box counting dimension calculation
-def calculate_BoxCounting(sequence,max_bins,cutoff):
+def calculate_BoxCounting(sequence,max_bins,title,cutoff):
     # Calculate Box Counting dimension for N-dimensional sequence
     # the algorithm is adapted from 
     # https://francescoturci.net/2016/03/31/box-counting-in-numpy/
@@ -566,6 +615,79 @@ def calculate_BoxCounting(sequence,max_bins,cutoff):
     plt.plot(sample_log_Bins,log_Pred)
     plt.xlabel('log 1/s')
     plt.ylabel('log Ns')
+    plt.title(title)
+    plt.show()
+
+
+# Evaluate Lyapunov Spectrum
+def lyap_spectra_eval(data,max_order,matrix_dim,tau):
+    
+    # get the orders
+    orders = np.arange(1,max_order)
+    
+    # setup the Lyapunov spectra list
+    spectra = []
+    
+    # dE list
+    dE_values = []
+    
+    # for each embedding dimension...
+    for order in orders:
+        
+        # get the embedding dimension
+        dE = order * (matrix_dim - 1) + 1
+        
+        # append the dimensions
+        dE_values.append(dE)
+        
+        # calculate the Lyapunov spectrum
+        lyap_spectrum = nolds.lyap_e(data, emb_dim=dE,
+                                     matrix_dim=matrix_dim,tau=tau)
+        # update the spectra list
+        spectra.append(lyap_spectrum)
+    
+    # plot the Lyapunov spectra
+    plt.plot(dE_values, spectra,marker='.')
+    plt.xlabel("dE")
+    plt.ylabel("Lyapunov Exponent")
+    plt.show()
+    
+    # print the last estimated exponents
+    sum_spectrum = 0
+    DKY = None
+    for i in range(0,len(lyap_spectrum)):
+        sum_spectrum_previous = sum_spectrum
+        print("\nL"+str(i+1), lyap_spectrum[i])
+        sum_spectrum += lyap_spectrum[i]
+        if sum_spectrum_previous >= 0 and sum_spectrum < 0:
+            DKY = (i - 1) + sum_spectrum_previous / abs(lyap_spectrum[i])
+            
+        
+    print("\nLyapunov Spectrum Sum:", sum_spectrum)
+    if DKY != None:
+        print("\nKaplan-Yorke Dimension:", DKY)
+
+
+# Calculate Lyapunov Exponents
+def calculate_lyap(data,dE,tau,matrix_dim=4,spectrum=True):
+    
+    # if one is not evaluating the Lyapunov spectrum...
+    if spectrum == False:
+        # use Rosenstein et al. method
+        L1 = nolds.lyap_r(data, emb_dim=dE, lag=tau)
+        print("\nLargest Lyapunov Exponent (Rosenstein et al.):", L1)
+    # otherwise use the Eckmann et al. method
+    else:
+        # Lyapunov spectrum
+        lyap_spectrum = nolds.lyap_e(data, emb_dim=dE,
+                                     matrix_dim=matrix_dim,tau=tau)
+        print("\nLyapunov Spectrum (Eckmann et al.):")
+        sum_spectrum = 0
+        for i in range(0,len(lyap_spectrum)):
+            print("\nL"+str(i+1), lyap_spectrum[i])
+            sum_spectrum += lyap_spectrum[i]
+        print("\nLyapunov Spectrum Sum:", sum_spectrum)
+
 
 
 # =============================================================================
@@ -601,10 +723,16 @@ def predict(E, # embedded series
             
 
 # Get the prediction metrics
-def prediction_metrics(y_pred, y_target, return_residuals=False):
+def prediction_metrics(y_pred, y_target, title, return_residuals=False):
 
+    plt.title(title)
     plt.plot(y_target,lw=0.5)
     plt.plot(y_pred,lw=0.5)
+    plt.show()
+
+    plt.scatter(y_target,y_pred,s=0.5)
+    plt.xlabel('observed')
+    plt.ylabel('predicted')
     plt.show()
     
     print("\nRho:", np.corrcoef(y_pred,y_target)[0][1])
@@ -623,35 +751,125 @@ def prediction_metrics(y_pred, y_target, return_residuals=False):
 
 # Estimate the prediction dimension retrieving the dimension with the highest
 # R2
-def prediction_dimension(df,series,dim_list,tau,ml,window,printouts=False):
+def prediction_dimension(df,series,dim_list,tau,ml,window,metric,printouts=False):
     
-    R2_list=[]
+    metric_list=[]
     
     for dE in dim_list:
         E=embed_series(df=df,series=series,dE=dE,tau=tau)
         y_pred, y_target = predict(E=E,ml=ml,target_name=series,window=window,horizon=1)
-        R2 = r2_score(y_target,y_pred)
-        R2_list.append(R2)
+        if metric == 'R2':
+            score = r2_score(y_target,y_pred)
+        elif metric == 'error':
+            score = mse(y_target, y_pred,squared=False)/(max(y_target)-min(y_target))
+        metric_list.append(score)
         if printouts == True:
             print("\nTesting Dimension:", dE)
-            print("R2 score:", R2)
+            print("Metric score:", score)
+    if metric == 'R2':
+        optimal_score = max(metric_list)
+        ind=np.where(np.array(metric_list)==optimal_score)
+    elif metric == 'error':
+        optimal_score = min(metric_list)
+        ind=np.where(np.array(metric_list)==optimal_score)
     
-    R2_max = max(R2_list)
-    R2_list = np.array(R2_list)
-    ind=np.where(R2_list==R2_max)
     dE=dim_list[ind][0]
+        
     print("\nOptimal Dimension:", dE)
-    print("R2 score:",R2_max)
+    print("Score:",optimal_score)
     
-    plt.plot(dim_list,R2_list,'.',c='k')
+    plt.plot(dim_list,metric_list,'.',c='k')
     plt.xlabel('Embedding Dimension')
-    plt.ylabel('R2 Score')
+    plt.ylabel('Score')
     plt.show()
     
-    return dE
+    return dE, optimal_score
+    
+# Correlation Sum
+def correlation_sum(S, # distance matrix
+                    radius # radius
+                    ):
+    # function to get the correlation integral
+    B = S <= radius
+    B = 1*B
+    num_lines = B.shape[0]
+    sum_values = np.sum(B) - num_lines
+    return sum_values /(num_lines * (num_lines - 1))
+    
+
+
+# Calculate the Correlation Dimension
+def correlation_dimension(S, # distance matrix
+                          radii, # radii list
+                          plot_result=True, # plot the observed and fitted line
+                          return_results=False # return results
+                          ):
+    log_Cr = [] # list of logarithms of the correlation sums
+    log_r = [] # list of logarithms of the radii
+    
+    # for each radius
+    for radius in radii:
+        # calculate the correlation sum
+        Cr = correlation_sum(S,radius)
+        # if there are recurrences
+        if Cr != 0:
+            # append the logarithm of the radius to the log_r list
+            log_r.append(np.log(radius))
+            # append the logarithm of the correlation sum to the log_Cr list
+            log_Cr.append(np.log(Cr))
     
     
+    slope, intercept, r, p, se = linregress(log_r,log_Cr)
+    
+    if plot_result == True:
+        plt.scatter(log_r,log_Cr)
+        plt.plot(log_r, intercept + slope * np.array(log_r), 'k--', lw=0.2)
+        plt.xlabel("log(r)")
+        plt.ylabel("log(Cr)")
+        plt.show()
+        
+    print("\nDimension:", slope)
+    print("\nR2", r ** 2)
+    print("\np-value:", p)
     
     
+    if return_results == True:
+        return log_r, log_Cr, slope, intercept
     
+# Calculate Correlation Dimensions for Different Embeddings
+def correlation_dimensions(df, # Pandas dataframe
+                           series, # series name
+                           max_dE, # maximum embedding dimension
+                           tau, # time delay
+                           radii # radii list
+                           ):
     
+    embedding_dimensions = list(np.arange(2,max_dE+1)) # embedding dimensions
+    estimated_dimensions = [] # estimated dimensions list
+    
+    # for each embedding dimension
+    for dE in embedding_dimensions:
+        print("\nEmbedding dimension:", dE)
+        # embed the series
+        E = embed_series(df,series,dE,tau)
+        # get the recurrence matrix
+        S = recurrence_matrix(E,radius=None,one_dim=False,plot=False)
+        # estimate the correlation dimension
+        log_r, log_Cr, slope, intercept = correlation_dimension(S,radii,
+                                                                plot_result=False,
+                                                                return_results=True)
+        # plot the fitted lines
+        plt.scatter(log_r,log_Cr,s=1)
+        plt.plot(log_r, intercept + slope * np.array(log_r), 'k--', lw=0.2)
+        
+        # store the estimated dimensions
+        estimated_dimensions.append(slope)
+    
+    plt.xlabel("log(r)")
+    plt.ylabel("log(Cr)")
+    plt.show()
+    
+    plt.plot(embedding_dimensions, estimated_dimensions,lw=1,marker='.')
+    plt.xlabel("Embedding Dimension")
+    plt.ylabel('Correlation Dimension')
+    plt.show()
