@@ -17,3 +17,5 @@ The class dmap contains the main attributes and methods for a dynamical map
 simulation.
 
 Copyright (c) January 2026 Carlos Pedro Gonçalves
+
+<img width="372" height="264" alt="image" src="https://github.com/user-attachments/assets/464074e9-1a7d-4057-80ad-c9e6d489c1c0" />
