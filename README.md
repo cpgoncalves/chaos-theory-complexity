@@ -1,7 +1,7 @@
 # Chaos Theory and Complexity Sciences Research Project's Software Tools and Resources Repository
 
 
-The Chaos Theory and Complexity Sciences Research and Educational Project is an international research project developed by Carlos Pedro Gonçalves (https://www.ulusofona.pt/docentes/carlos-pedro-dos-santos-goncalves-6186) and Carlos Rouco (https://www.ulusofona.pt/docentes/jose-carlos-dias-rouco-5540) at Lusophone University of Humanities and Technologies’ School of Economic Sciences and Organizations.
+The Chaos Theory and Complexity Sciences Research and Educational Project is an international research project developed by Carlos Pedro Gonçalves (https://www.ulusofona.pt/docentes/carlos-pedro-dos-santos-goncalves-6186) and Carlos Rouco (https://www.ulusofona.pt/docentes/jose-carlos-dias-rouco-5540) at Lusófona University’ School of Economic Sciences and Organizations.
 
 To find out more visit the project's Homepage: https://sites.google.com/view/chaos-complexity
 
