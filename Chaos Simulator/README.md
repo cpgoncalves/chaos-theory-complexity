@@ -7,7 +7,7 @@ The main software files include:
 DynMap - dynamical maps' simulator (example files 1 to 4).
 
 
-Copyright (c) January 2026 Carlos Pedro Gonçalves
+Copyright (c) January 2026 Carlos Pedro Gonçalves and Carlos Rouco
 
 <img width="372" height="264" alt="image" src="https://github.com/user-attachments/assets/464074e9-1a7d-4057-80ad-c9e6d489c1c0" />
 <img width="372" height="278" alt="image" src="https://github.com/user-attachments/assets/3d91eb75-9bb9-4e48-b972-7403be2d501a" />
